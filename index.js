@@ -21,5 +21,7 @@ app.get('/orders', order.getOrders(db));
 app.get('/order/:id', order.getOrder(db));
 app.post('/orders', order.postOrder(db));
 app.post('/items', [standard.validateUser, item.postItems(db)]);
+app.patch('/item/:id', [standard.validateUser, item.patchItem(db)]);
+app.delete('/item/:id', [standard.validateUser, item.deleteItem(db)]);
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.listen(port, () => console.log(`App listening on port ${port}!`));

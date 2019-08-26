@@ -11,7 +11,8 @@ function getOrders(db) {
 				items: rows,
 			});
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ sucess: false });
 		}
 	};
 }
@@ -29,13 +30,15 @@ function getOrder(db) {
 					items: row,
 				});
 			} else {
+				res.status(404);
 				res.json({
 					success: false,
 					message: 'Item could not be found',
 				});
 			}
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ success: false });
 		}
 	};
 }
@@ -44,6 +47,7 @@ function postOrder(db) {
 	return async (req, res, next) => {
 		try {
 			if (!req.body) {
+				res.status(400);
 				res.json({
 					success: false,
 					message: 'Invalid request',
@@ -53,6 +57,7 @@ function postOrder(db) {
 
 			const { itemId, quantity } = req.body;
 			if (itemId === null || quantity === null) {
+				res.status(400);
 				res.json({
 					success: false,
 					message: 'Invalid request',
@@ -64,6 +69,7 @@ function postOrder(db) {
 			]);
 
 			if (!row) {
+				res.status(404);
 				res.json({
 					success: false,
 					message: 'Item could not be found',
@@ -72,6 +78,7 @@ function postOrder(db) {
 			}
 
 			if (row.stock < quantity) {
+				res.status(400);
 				res.json({
 					success: false,
 					message: 'Item does not have enough stock',
@@ -92,7 +99,8 @@ function postOrder(db) {
 			);
 			res.json({ success: true, order: order });
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ success: false });
 		}
 	};
 }

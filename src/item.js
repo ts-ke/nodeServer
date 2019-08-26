@@ -13,7 +13,8 @@ function getItems(db) {
 				items: rows,
 			});
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ success: false });
 		}
 	};
 }
@@ -31,13 +32,15 @@ function getItem(db) {
 					items: row,
 				});
 			} else {
+				res.status(404);
 				res.json({
 					success: false,
 					message: 'Item could not be found',
 				});
 			}
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ success: false });
 		}
 	};
 }
@@ -47,6 +50,7 @@ function postItems(db) {
 		try {
 			const { items } = req.body;
 			if (!items || !isItems(items)) {
+				res.status(400);
 				res.json({ success: false, message: 'Invalid request' });
 				return;
 			}
@@ -66,6 +70,7 @@ function postItems(db) {
 						itemIds: inserts.map(v => v.lastID.toString()),
 					});
 				} catch (error) {
+					res.status(400);
 					res.json({
 						success: false,
 						message: 'One (or more) items are invalid',
@@ -73,7 +78,58 @@ function postItems(db) {
 				}
 			});
 		} catch (error) {
-			next(error);
+			res.status(500);
+			res.json({ success: false });
+		}
+	};
+}
+
+function patchItem(db) {
+	return async (req, res, next) => {
+		try {
+			const { id } = req.params;
+			const { stock } = req.body;
+			if (!id || !stock) {
+				res.status(400);
+				res.json({ success: false });
+				return;
+			}
+
+			const q = 'UPDATE item SET stock = ? where id = ?';
+			await dbRun(db, q, [stock, id]);
+			res.json({ success: true });
+		} catch (error) {
+			res.status(500);
+			res.json({ success: false });
+		}
+	};
+}
+
+function deleteItem(db) {
+	return async (req, res, next) => {
+		try {
+			const { id } = req.params;
+			if (!id) {
+				res.status(400);
+				res.json({ success: false });
+				return;
+			}
+			const q = 'DELETE FROM item where id = ?';
+			const result = await dbRun(db, q, [id]);
+
+			if (result.changes === 0) {
+				res.status(400);
+				res.json({
+					success: false,
+					message: 'Item could not be found',
+				});
+				return;
+			}
+
+			res.json({ success: true });
+		} catch (error) {
+			res.status(500);
+			res.json({ success: false });
 		}
 	};
 }
@@ -81,3 +137,5 @@ function postItems(db) {
 exports.getItems = getItems;
 exports.getItem = getItem;
 exports.postItems = postItems;
+exports.patchItem = patchItem;
+exports.deleteItem = deleteItem;
