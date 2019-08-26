@@ -11,7 +11,9 @@ const port = 3000;
 
 var db = new sqlite3.Database(':memory:');
 dbConfig.createTables(db);
-test.initialTables(db);
+
+//for testing
+// test.initialTables(db);
 
 // app.get('/', (req, res) => res.send('Hello World!'));
 app.use(bodyParser.json());
