@@ -2,7 +2,7 @@ const check = require('check-types');
 const myDb = require('../db/index.js');
 const util = require('./util.js');
 const { dbGet, dbRun, dbAll } = myDb;
-const { isItems } = util;
+const { isItems, checkStringInt, checkPositiveInteger } = util;
 
 function getItems(db) {
 	return async (req, res, next) => {
@@ -130,15 +130,23 @@ function patchItem(db) {
 		try {
 			const { id } = req.params;
 			const { stock } = req.body;
-			if (!id || !stock) {
+			if (!checkStringInt(id) || !checkPositiveInteger(stock)) {
 				res.status(400);
 				res.json({ success: false });
 				return;
 			}
 
 			const q = 'UPDATE item SET stock = ? where id = ?';
-			await dbRun(db, q, [stock, id]);
-			res.json({ success: true });
+			const update = await dbRun(db, q, [stock, id]);
+			if (update.changes === 0) {
+				res.status(404);
+				res.json({
+					success: false,
+					message: 'Item could not be found',
+				});
+			} else {
+				res.json({ success: true });
+			}
 		} catch (error) {
 			res.status(500);
 			res.json({ success: false });
