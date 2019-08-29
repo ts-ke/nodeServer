@@ -1,6 +1,7 @@
 const myDb = require('../db/index.js');
+const util = require('./util.js');
 const { dbGet, dbRun, dbAll } = myDb;
-
+const { isItems, checkStringInt, checkPositiveInteger } = util;
 function getOrders(db) {
 	return async (req, res, next) => {
 		try {
@@ -21,13 +22,26 @@ function getOrder(db) {
 	return async (req, res, next) => {
 		try {
 			const { id } = req.params;
+			if (!checkStringInt(id)) {
+				res.status(400);
+				res.json({
+					success: false,
+					message: 'Invalid request',
+				});
+				return;
+			}
+
 			const q = 'SELECT * from order_table WHERE id = ? LIMIT 1';
 			const row = await dbGet(db, q, [id]);
 
 			if (row) {
 				res.json({
 					success: true,
-					items: row,
+					items: {
+						...row,
+						id: row.id.toString(),
+						itemId: row.itemId.toString(),
+					},
 				});
 			} else {
 				res.status(404);
@@ -56,7 +70,7 @@ function postOrder(db) {
 			}
 
 			const { itemId, quantity } = req.body;
-			if (itemId === null || quantity === null) {
+			if (!checkStringInt(itemId) || !checkPositiveInteger(quantity)) {
 				res.status(400);
 				res.json({
 					success: false,
@@ -86,18 +100,31 @@ function postOrder(db) {
 				return;
 			}
 
-			const { lastID } = await dbRun(
-				db,
-				'INSERT INTO order_table(itemId, quantity) values (?,?)',
-				[itemId, quantity],
-			);
-
-			const order = await dbGet(
-				db,
-				'SELECT id, * from order_table where id = ?',
-				[lastID],
-			);
-			res.json({ success: true, order: order });
+			db.serialize(async function() {
+				try {
+					db.run('BEGIN');
+					const { lastID } = await dbRun(
+						db,
+						'INSERT INTO order_table(itemId, quantity) values (?,?)',
+						[itemId, quantity],
+					);
+					await dbRun(
+						db,
+						'UPDATE item SET stock = stock - ? where id = ?',
+						[quantity, itemId],
+					);
+					const order = await dbGet(
+						db,
+						'SELECT id, * from order_table where id = ?',
+						[lastID],
+					);
+					db.run('COMMIT');
+					res.json({ success: true, order });
+				} catch (error) {
+					res.status(500);
+					res.json({ success: false });
+				}
+			});
 		} catch (error) {
 			res.status(500);
 			res.json({ success: false });
