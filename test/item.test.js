@@ -16,7 +16,6 @@ describe('postItems tests', () => {
 			],
 		};
 		const url = config.TEST_URL + ':' + config.PORT.toString() + '/items';
-		console.log(url);
 		const res = await fetch(url, {
 			agent,
 			method: 'POST',
@@ -26,7 +25,6 @@ describe('postItems tests', () => {
 			},
 			body: JSON.stringify(body),
 		});
-
 		const json = await res.json();
 		expect(json.success).toBeTruthy();
 	});

@@ -56,26 +56,50 @@ function postItems(db) {
 				res.json({ success: false, message: 'Invalid request' });
 				return;
 			}
-			const q =
-				'INSERT INTO item(type, color, size, stock) values (?, ?, ?, ?) ON CONFLICT(type, color, size) DO UPDATE SET stock = excluded.stock + ?';
+			const q = `
+			INSERT INTO item(type, color, size, stock) values (?, ?, ?, ?)
+			ON CONFLICT(type, color, size) DO UPDATE SET stock = stock + ?
+			`;
+
+			const idQ =
+				'select id from item where type = ? and color = ? and size = ?';
 
 			db.serialize(async function() {
 				try {
+					db.run('BEGIN');
 					const promises = [];
-					items.forEach(item => {
+					for (const item of items) {
 						const { type, color, size, stock } = item;
-						promises.push(
-							dbRun(db, q, [type, color, size, stock, stock]),
-						);
-					});
-					const inserts = await Promise.all(promises);
+						const insert = await dbRun(db, q, [
+							type,
+							color,
+							size,
+							stock,
+							stock,
+						]);
+						const { id } = await dbGet(db, idQ, [
+							type,
+							color,
+							size,
+						]);
+
+						promises.push({
+							id,
+							changes: insert.changes,
+						});
+					}
+
+					// const inserts = await Promise.all(promises);
+					const inserts = promises;
 
 					if (check.all(inserts.map(d => d.changes !== 0))) {
+						db.run('COMMIT');
 						res.json({
 							success: true,
-							itemIds: inserts.map(v => v.lastID.toString()),
+							itemIds: inserts.map(v => v.id.toString()),
 						});
 					} else {
+						db.run('ROLLBACK');
 						res.status(400);
 						res.json({
 							success: false,
@@ -91,6 +115,7 @@ function postItems(db) {
 				}
 			});
 		} catch (error) {
+			db.run('ROLLBACK');
 			res.status(500);
 			res.json({ success: false });
 		}
