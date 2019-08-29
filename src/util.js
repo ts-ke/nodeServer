@@ -12,9 +12,7 @@ function isItems(items) {
 	if (!Array.isArray(items)) {
 		return false;
 	}
-
-	const isTrue = v => v;
-	return items.map(validItem).every(isTrue);
+	return check.all(items.map(validItem));
 }
 
 function checkPositiveInteger(x) {

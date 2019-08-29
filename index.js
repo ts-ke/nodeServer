@@ -8,8 +8,9 @@ const test = require('./test/initTable.js');
 const item = require('./src/item.js');
 const order = require('./src/order.js');
 const standard = require('./src/standard.js');
+const config = require('./config.js');
 const app = express();
-const port = 443;
+const port = config.PORT;
 
 var db = new sqlite3.Database(':memory:');
 dbConfig.createTables(db);

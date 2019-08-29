@@ -1,6 +1,7 @@
+const check = require('check-types');
 const myDb = require('../db/index.js');
-const { dbGet, dbRun, dbAll } = myDb;
 const util = require('./util.js');
+const { dbGet, dbRun, dbAll } = myDb;
 const { isItems } = util;
 
 function getItems(db) {
@@ -46,29 +47,41 @@ function getItem(db) {
 }
 
 function postItems(db) {
-	return async (req, res, next) => {
+	return async (req, res) => {
 		try {
 			const { items } = req.body;
+
 			if (!items || !isItems(items)) {
 				res.status(400);
 				res.json({ success: false, message: 'Invalid request' });
 				return;
 			}
-
 			const q =
-				'INSERT INTO item(type, color, size, stock) values (?, ?, ?, ?)';
+				'INSERT INTO item(type, color, size, stock) values (?, ?, ?, ?) ON CONFLICT(type, color, size) DO UPDATE SET stock = excluded.stock + ?';
+
 			db.serialize(async function() {
 				try {
 					const promises = [];
 					items.forEach(item => {
 						const { type, color, size, stock } = item;
-						promises.push(dbRun(db, q, [type, color, size, stock]));
+						promises.push(
+							dbRun(db, q, [type, color, size, stock, stock]),
+						);
 					});
 					const inserts = await Promise.all(promises);
-					res.json({
-						success: true,
-						itemIds: inserts.map(v => v.lastID.toString()),
-					});
+
+					if (check.all(inserts.map(d => d.changes !== 0))) {
+						res.json({
+							success: true,
+							itemIds: inserts.map(v => v.lastID.toString()),
+						});
+					} else {
+						res.status(400);
+						res.json({
+							success: false,
+							message: 'One (or more) items are invalid',
+						});
+					}
 				} catch (error) {
 					res.status(400);
 					res.json({
