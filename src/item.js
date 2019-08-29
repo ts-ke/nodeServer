@@ -30,7 +30,10 @@ function getItem(db) {
 			if (row) {
 				res.json({
 					success: true,
-					items: row,
+					item: {
+						...row,
+						id: row.id.toString(),
+					},
 				});
 			} else {
 				res.status(404);
