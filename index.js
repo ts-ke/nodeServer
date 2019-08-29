@@ -1,13 +1,15 @@
-var sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('sqlite3').verbose();
 const express = require('express');
-var bodyParser = require('body-parser');
+const https = require('https');
+const fs = require('fs');
+const bodyParser = require('body-parser');
 const dbConfig = require('./db/index.js');
 const test = require('./test/initTable.js');
 const item = require('./src/item.js');
 const order = require('./src/order.js');
 const standard = require('./src/standard.js');
 const app = express();
-const port = 3000;
+const port = 443;
 
 var db = new sqlite3.Database(':memory:');
 dbConfig.createTables(db);
@@ -15,7 +17,6 @@ dbConfig.createTables(db);
 //for testing
 // test.initialTables(db);
 
-// app.get('/', (req, res) => res.send('Hello World!'));
 app.use(bodyParser.json());
 app.get('/items', item.getItems(db));
 app.get('/item/:id', item.getItem(db));
@@ -26,4 +27,9 @@ app.post('/items', [standard.validateUser, item.postItems(db)]);
 app.patch('/item/:id', [standard.validateUser, item.patchItem(db)]);
 app.delete('/item/:id', [standard.validateUser, item.deleteItem(db)]);
 
-app.listen(port, () => console.log(`App listening on port ${port}!`));
+var privateKey = fs.readFileSync('sslcert/key.pem', 'utf8');
+var certificate = fs.readFileSync('sslcert/certificate.pem', 'utf8');
+var credentials = { key: privateKey, cert: certificate };
+https
+	.createServer(credentials, app)
+	.listen(port, () => console.log(`App listening on port ${port}!`));

@@ -5,12 +5,16 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "node index.js",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "jest"
 	},
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"check-types": "^10.0.0",
 		"express": "^4.17.1",
 		"sqlite3": "^4.1.0"
+	},
+	"devDependencies": {
+		"jest": "^24.9.0"
 	}
 }

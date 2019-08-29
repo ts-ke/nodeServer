@@ -3,11 +3,12 @@ function createTables(db) {
 		db.run(`
             CREATE TABLE ITEM (
                 id integer primary key AUTOINCREMENT,
-                type text,
-                color text,
-                size size_type,
-                stock integer,
-                CHECK(size in ('S', 'M', 'L')), 
+                type text NOT NULL,
+                color text NOT NULL,
+                size size_type NOT NULL,
+                stock integer NOT NULL,
+				CHECK(size in ('S', 'M', 'L')),
+				CHECK(stock >= 0),
                 UNIQUE(type, color, size)
             );
         `);
@@ -15,8 +16,9 @@ function createTables(db) {
 		db.run(`
             CREATE TABLE ORDER_TABLE (
                 id integer primary key AUTOINCREMENT,
-                itemId integer,
-                quantity integer,
+                itemId integer NOT NULL,
+				quantity integer NOT NULL,
+				CHECK(quantity >= 0),
                 FOREIGN KEY(itemId) REFERENCES ITEM(id)
             );
         `);
