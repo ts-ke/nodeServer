@@ -2,16 +2,22 @@ const check = require('check-types');
 const myDb = require('../db/index.js');
 const util = require('./util.js');
 const { dbGet, dbRun, dbAll } = myDb;
-const { isItems, checkStringInt, checkPositiveInteger } = util;
+const {
+	isItems,
+	checkStringInt,
+	checkPositiveInteger,
+	formatInterfaceItem,
+	validPatchItemBody,
+} = util;
 
 function getItems(db) {
 	return async (req, res, next) => {
 		try {
-			const q = 'SELECT * from item';
+			const q = 'SELECT id, type, color, size, stock from item';
 			const rows = await dbAll(db, q, []);
 			res.json({
 				success: true,
-				items: rows,
+				items: rows.map(formatInterfaceItem),
 			});
 		} catch (error) {
 			res.status(500);
@@ -24,16 +30,14 @@ function getItem(db) {
 	return async (req, res, next) => {
 		try {
 			const { id } = req.params;
-			const q = 'SELECT * from item WHERE id = ? LIMIT 1';
+			const q =
+				'SELECT id, type, color, size, stock from item WHERE id = ? LIMIT 1';
 			const row = await dbGet(db, q, [id]);
 
 			if (row) {
 				res.json({
 					success: true,
-					item: {
-						...row,
-						id: row.id.toString(),
-					},
+					item: formatInterfaceItem(row),
 				});
 			} else {
 				res.status(404);
@@ -129,10 +133,10 @@ function patchItem(db) {
 	return async (req, res, next) => {
 		try {
 			const { id } = req.params;
-			const { stock } = req.body;
-			if (!checkStringInt(id) || !checkPositiveInteger(stock)) {
+			const { body } = req;
+			if (!checkStringInt(id) || !validPatchItemBody(body)) {
 				res.status(400);
-				res.json({ success: false });
+				res.json({ success: false, message: 'Invalid request' });
 				return;
 			}
 

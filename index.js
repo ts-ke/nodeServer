@@ -15,18 +15,19 @@ const port = config.PORT;
 var db = new sqlite3.Database(':memory:');
 dbConfig.createTables(db);
 
+const { validateUser, logRequestStart } = standard;
 //for testing
 // test.initialTables(db);
 
 app.use(bodyParser.json());
-app.get('/items', item.getItems(db));
-app.get('/item/:id', item.getItem(db));
-app.get('/orders', order.getOrders(db));
-app.get('/order/:id', order.getOrder(db));
-app.post('/orders', order.postOrder(db));
-app.post('/items', [standard.validateUser, item.postItems(db)]);
-app.patch('/item/:id', [standard.validateUser, item.patchItem(db)]);
-app.delete('/item/:id', [standard.validateUser, item.deleteItem(db)]);
+app.get('/items', [logRequestStart, item.getItems(db)]);
+app.get('/item/:id', [logRequestStart, item.getItem(db)]);
+app.get('/orders', [logRequestStart, order.getOrders(db)]);
+app.get('/order/:id', [logRequestStart, order.getOrder(db)]);
+app.post('/orders', [logRequestStart, order.postOrder(db)]);
+app.post('/items', [logRequestStart, validateUser, item.postItems(db)]);
+app.patch('/item/:id', [logRequestStart, validateUser, item.patchItem(db)]);
+app.delete('/item/:id', [logRequestStart, validateUser, item.deleteItem(db)]);
 
 var privateKey = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/certificate.pem', 'utf8');

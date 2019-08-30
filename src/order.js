@@ -1,15 +1,20 @@
 const myDb = require('../db/index.js');
 const util = require('./util.js');
 const { dbGet, dbRun, dbAll } = myDb;
-const { isItems, checkStringInt, checkPositiveInteger } = util;
+const {
+	isItems,
+	checkStringInt,
+	checkPositiveInteger,
+	formatInterfaceOrder,
+} = util;
 function getOrders(db) {
 	return async (req, res, next) => {
 		try {
-			const q = 'SELECT * from order_table';
+			const q = 'SELECT id, itemId, quantity from order_table';
 			const rows = await dbAll(db, q, []);
 			res.json({
 				success: true,
-				items: rows,
+				items: rows.map(formatInterfaceOrder),
 			});
 		} catch (error) {
 			res.status(500);
@@ -31,17 +36,14 @@ function getOrder(db) {
 				return;
 			}
 
-			const q = 'SELECT * from order_table WHERE id = ? LIMIT 1';
+			const q =
+				'SELECT id, itemId, quantity from order_table WHERE id = ? LIMIT 1';
 			const row = await dbGet(db, q, [id]);
 
 			if (row) {
 				res.json({
 					success: true,
-					items: {
-						...row,
-						id: row.id.toString(),
-						itemId: row.itemId.toString(),
-					},
+					items: formatInterfaceOrder(row),
 				});
 			} else {
 				res.status(404);
@@ -81,7 +83,7 @@ function postOrder(db) {
 			const row = await dbGet(db, 'SELECT stock from item where id = ?', [
 				itemId,
 			]);
-
+			console.log(row);
 			if (!row) {
 				res.status(404);
 				res.json({
@@ -115,7 +117,7 @@ function postOrder(db) {
 					);
 					const order = await dbGet(
 						db,
-						'SELECT id, * from order_table where id = ?',
+						'SELECT id, itemId, quantity from order_table where id = ?',
 						[lastID],
 					);
 					db.run('COMMIT');
