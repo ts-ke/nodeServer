@@ -29,9 +29,35 @@ app.post('/items', [logRequestStart, validateUser, item.postItems(db)]);
 app.patch('/item/:id', [logRequestStart, validateUser, item.patchItem(db)]);
 app.delete('/item/:id', [logRequestStart, validateUser, item.deleteItem(db)]);
 
-var privateKey = fs.readFileSync('sslcert/key.pem', 'utf8');
-var certificate = fs.readFileSync('sslcert/certificate.pem', 'utf8');
-var credentials = { key: privateKey, cert: certificate };
-https
-	.createServer(credentials, app)
-	.listen(port, () => console.log(`App listening on port ${port}!`));
+if (config.NODE_ENV === 'local') {
+	const privateKey = fs.readFileSync('sslcert/key.pem', 'utf8');
+	const certificate = fs.readFileSync('sslcert/certificate.pem', 'utf8');
+	const credentials = { key: privateKey, cert: certificate };
+	https
+		.createServer(credentials, app)
+		.listen(port, () => console.log(`App listening on port ${port}!`));
+} else if (config.NODE_ENV === 'development') {
+	const domainName = 'kenneth.ml';
+	const privateKey = fs.readFileSync(
+		`/etc/letsencrypt/live/${domainName}/privkey.pem`,
+		'utf8',
+	);
+	const certificate = fs.readFileSync(
+		`/etc/letsencrypt/live/${domainName}/cert.pem`,
+		'utf8',
+	);
+	const ca = fs.readFileSync(
+		`/etc/letsencrypt/live/${domainName}/chain.pem`,
+		'utf8',
+	);
+
+	const credentials = {
+		key: privateKey,
+		cert: certificate,
+		ca: ca,
+	};
+
+	https
+		.createServer(credentials, app)
+		.listen(port, () => console.log(`App listening on port ${port}!`));
+}

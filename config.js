@@ -6,3 +6,5 @@ const TOKEN =
 exports.TEST_URL = TEST_URL;
 exports.PORT = PORT;
 exports.TOKEN = TOKEN;
+
+const NODE_ENV = 'local'; // "local" || "development"
