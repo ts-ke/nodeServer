@@ -77,6 +77,14 @@ function validPatchItemBody(body) {
 	return check.all(obj) && Object.keys(obj).length === 1;
 }
 
+function validPostOrderBody(body) {
+	const obj = check.map(body, {
+		itemId: check.nonEmptyString,
+		quantity: checkPositiveInteger,
+	});
+	return check.all(obj) && Object.keys(obj).length === 2;
+}
+
 exports.validToken = validToken;
 exports.isItems = isItems;
 exports.checkPositiveInteger = checkPositiveInteger;
@@ -88,3 +96,4 @@ exports.formatInterfaceItem = formatInterfaceItem;
 exports.formatInterfaceOrder = formatInterfaceOrder;
 exports.checkSize = checkSize;
 exports.validPatchItemBody = validPatchItemBody;
+exports.validPostOrderBody = validPostOrderBody;

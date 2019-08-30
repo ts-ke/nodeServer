@@ -16,7 +16,9 @@ function validateUser(req, res, next) {
 
 function logRequestStart(req, res, next) {
 	console.info(
-		`Method: ${req.method}; Body: ${req.body}; Params: ${req.params};`,
+		`Method: ${req.method}; URL: ${req.originalUrl}; Body: ${JSON.stringify(
+			req.body,
+		)}; Params: ${JSON.stringify(req.params)};`,
 	);
 	next();
 }

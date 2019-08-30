@@ -6,6 +6,7 @@ const {
 	checkStringInt,
 	checkPositiveInteger,
 	formatInterfaceOrder,
+	validPostOrderBody,
 } = util;
 function getOrders(db) {
 	return async (req, res, next) => {
@@ -17,6 +18,7 @@ function getOrders(db) {
 				items: rows.map(formatInterfaceOrder),
 			});
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ sucess: false });
 		}
@@ -53,6 +55,7 @@ function getOrder(db) {
 				});
 			}
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}
@@ -62,7 +65,8 @@ function getOrder(db) {
 function postOrder(db) {
 	return async (req, res, next) => {
 		try {
-			if (!req.body) {
+			const { body } = req;
+			if (!validPostOrderBody(body)) {
 				res.status(400);
 				res.json({
 					success: false,
@@ -71,19 +75,21 @@ function postOrder(db) {
 				return;
 			}
 
-			const { itemId, quantity } = req.body;
-			if (!checkStringInt(itemId) || !checkPositiveInteger(quantity)) {
-				res.status(400);
+			const { itemId, quantity } = body;
+
+			if (!checkStringInt(itemId)) {
+				res.status(404);
 				res.json({
 					success: false,
-					message: 'Invalid request',
+					message: 'Item could not be found',
 				});
 				return;
 			}
+
 			const row = await dbGet(db, 'SELECT stock from item where id = ?', [
 				itemId,
 			]);
-			console.log(row);
+
 			if (!row) {
 				res.status(404);
 				res.json({
@@ -121,13 +127,17 @@ function postOrder(db) {
 						[lastID],
 					);
 					db.run('COMMIT');
-					res.json({ success: true, order });
+					res.json({
+						success: true,
+						order: formatInterfaceOrder(order),
+					});
 				} catch (error) {
 					res.status(500);
 					res.json({ success: false });
 				}
 			});
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}

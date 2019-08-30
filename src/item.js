@@ -20,6 +20,7 @@ function getItems(db) {
 				items: rows.map(formatInterfaceItem),
 			});
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}
@@ -47,6 +48,7 @@ function getItem(db) {
 				});
 			}
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}
@@ -60,7 +62,10 @@ function postItems(db) {
 
 			if (!items || !isItems(items)) {
 				res.status(400);
-				res.json({ success: false, message: 'Invalid request' });
+				res.json({
+					success: false,
+					message: 'One (or more) items are invalid',
+				});
 				return;
 			}
 			const q = `
@@ -123,6 +128,7 @@ function postItems(db) {
 			});
 		} catch (error) {
 			db.run('ROLLBACK');
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}
@@ -134,14 +140,23 @@ function patchItem(db) {
 		try {
 			const { id } = req.params;
 			const { body } = req;
-			if (!checkStringInt(id) || !validPatchItemBody(body)) {
+			if (!validPatchItemBody(body)) {
 				res.status(400);
 				res.json({ success: false, message: 'Invalid request' });
 				return;
 			}
 
+			if (!checkStringInt(id)) {
+				res.status(404);
+				res.json({
+					success: false,
+					message: 'Item could not be found',
+				});
+				return;
+			}
+
 			const q = 'UPDATE item SET stock = ? where id = ?';
-			const update = await dbRun(db, q, [stock, id]);
+			const update = await dbRun(db, q, [body.stock, id]);
 			if (update.changes === 0) {
 				res.status(404);
 				res.json({
@@ -152,6 +167,7 @@ function patchItem(db) {
 				res.json({ success: true });
 			}
 		} catch (error) {
+			console.error(error);
 			res.status(500);
 			res.json({ success: false });
 		}
